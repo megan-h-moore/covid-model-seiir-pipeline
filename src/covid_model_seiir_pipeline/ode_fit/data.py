@@ -70,5 +70,4 @@ class ODEDataInterface:
 
     def save_location_metadata_file(self, locations: List[int]) -> None:
         with (self.ode_paths.root_dir / 'locations.yaml') as location_file:
-            yaml.dump({'locations': locations},location_file)
-
+            yaml.dump({'locations': locations}, location_file)

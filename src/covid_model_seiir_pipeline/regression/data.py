@@ -2,24 +2,20 @@ from pathlib import Path
 from typing import List, Dict, Tuple
 
 import pandas as pd
+import yaml
 
 from covid_model_seiir_pipeline.static_vars import COVARIATE_COL_DICT
-from covid_model_seiir_pipeline.paths import (RegressionPaths, CovariatePaths, ODEPaths,
-                                              InfectionPaths)
+from covid_model_seiir_pipeline.paths import RegressionPaths, CovariatePaths, ODEPaths
 
 
 class RegressionDataInterface:
 
     covariate_scenario_val = "{covariate}_{scenario}"
 
-    def __init__(self, regression_root: Path, covariate_root: Path, ode_fit_root: Path,
-                 infection_root: Path, location_file: Path):
+    def __init__(self, regression_root: Path, covariate_root: Path, ode_fit_root: Path):
         self.regression_paths = RegressionPaths(regression_root)
         self.covariate_paths = CovariatePaths(covariate_root)
         self.ode_paths = ODEPaths(ode_fit_root)
-        self.infection_paths = InfectionPaths(infection_root)
-        # TODO: transition to using data from snapshot
-        self.location_metadata_file = location_file
 
     def _load_scenario_file(self, val_name: str, input_file: Path, location_ids: List[int],
                             draw_id: int
@@ -118,15 +114,9 @@ class RegressionDataInterface:
             loc_scenario_df.to_csv(scenario_file, index=False)
 
     def load_location_ids(self) -> List[int]:
-        return pd.read_csv(self.location_metadata_file)["location_id"].tolist()
-
-    def load_infections(self, location_ids: List[int], draw_id: int
-                        ) -> Dict[int, pd.DataFrame]:
-        dfs = dict()
-        for loc in location_ids:
-            file = self.infection_paths.get_infection_file(location_id=loc, draw_id=draw_id)
-            dfs[loc] = pd.read_csv(file)
-        return dfs
+        with (self.ode_paths.root_dir / 'locations.yaml').open() as locations_file:
+            locations = yaml.full_load(locations_file)['locations']
+        return locations
 
     def load_ode_fits(self, location_ids: List[int], draw_id: int) -> pd.DataFrame:
         df_beta = []
